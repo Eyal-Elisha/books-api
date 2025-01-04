@@ -4,42 +4,37 @@ import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.DatabaseVersion;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.type.BasicType;
+import org.hibernate.type.SqlTypes;
+import org.hibernate.type.spi.TypeConfiguration;
 
 public class SQLiteDialect extends Dialect {
 
     public SQLiteDialect() {
-        super(DatabaseVersion.make(3)); // Specify SQLite version 3 or higher
+        super(DatabaseVersion.make(3)); // SQLite version 3
     }
 
     @Override
-    public void registerColumnTypes(TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
+    public void contributeTypes(TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
         var typeConfiguration = typeContributions.getTypeConfiguration();
 
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(Integer.class).getJavaTypeDescriptor(),
-                "integer"
-        );
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(String.class).getJavaTypeDescriptor(),
-                "text"
-        );
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(Byte[].class).getJavaTypeDescriptor(),
-                "blob"
-        );
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(Character[].class).getJavaTypeDescriptor(),
-                "text"
-        );
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(Double.class).getJavaTypeDescriptor(),
-                "real"
-        );
-        typeConfiguration.getBasicTypeRegistry().register(
-                (BasicType<?>) typeConfiguration.getBasicTypeForJavaType(Boolean.class).getJavaTypeDescriptor(),
-                "boolean"
-        );
+        // Register common types for SQLite, ensuring non-null BasicType
+        registerIfNotNull(typeConfiguration, Integer.class, "integer");
+        registerIfNotNull(typeConfiguration, String.class, "text");
+        registerIfNotNull(typeConfiguration, Byte[].class, "blob");
+        registerIfNotNull(typeConfiguration, Double.class, "real");
+        registerIfNotNull(typeConfiguration, Boolean.class, "boolean");
+
+        // Map BIGINT to INTEGER for SQLite
+        registerIfNotNull(typeConfiguration, Long.class, "integer");  // LONG is mapped as INTEGER in SQLite
+    }
+
+    private <T> void registerIfNotNull(TypeConfiguration typeConfiguration, Class<T> javaType, String sqlType) {
+        var basicType = typeConfiguration.getBasicTypeForJavaType(javaType);
+        if (basicType != null) {
+            typeConfiguration.getBasicTypeRegistry().register(basicType, sqlType);
+        } else {
+            System.err.println("Warning: No BasicType found for " + javaType.getName());
+        }
     }
 
     @Override
