@@ -10,21 +10,20 @@ import jakarta.persistence.Id;
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "title", nullable = false)  // Ensures column is non-nullable
+    @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "author", nullable = false)  // Ensures column is non-nullable
+    @Column(name = "author", nullable = false)
     private String author;
 
-    @Column(name = "published_date")  // Optional, if you'd like to control the column name explicitly
+    @Column(name = "published_date")
     private String publishedDate;
 
-    @Column(name = "isbn", unique = true)  // Ensures ISBN is unique across all books
+    @Column(name = "isbn", unique = true)
     private String isbn;
-
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
