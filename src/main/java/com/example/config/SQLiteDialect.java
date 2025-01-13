@@ -16,7 +16,7 @@ public class SQLiteDialect extends Dialect {
     public void contributeTypes(TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
         var typeConfiguration = typeContributions.getTypeConfiguration();
 
-        // Register common types for SQLite
+
         registerIfNotNull(typeConfiguration, Integer.class, "integer");
         registerIfNotNull(typeConfiguration, String.class, "text");
         registerIfNotNull(typeConfiguration, Byte[].class, "blob");
