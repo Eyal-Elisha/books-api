@@ -5,13 +5,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
 
-    // Custom query to find books by title
-    List<Book> findByTitle(String title);
+    Optional<Book> findByIsbn(String isbn);
 
-    // Custom query to find books published after a certain date (keeping publishedDate as String)
+    @Query("SELECT b FROM Book b WHERE LOWER(b.title) = LOWER(:title)")
+    List<Book> findByTitleIgnoreCase(@Param("title") String title);
+
     @Query("SELECT b FROM Book b WHERE b.publishedDate > :date")
-    List<Book> findByPublishedDateAfter(@Param("date") String date);  // Keep as String for publishedDate
+    List<Book> findByPublishedDateAfter(@Param("date") String date);
+
+    List<Book> findByAuthor(String author);
 }
