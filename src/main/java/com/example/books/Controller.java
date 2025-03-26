@@ -1,67 +1,70 @@
 package com.example.books;
 
+import com.example.books.errorHandler.BookNotFoundException;
+import com.example.books.errorHandler.DuplicateIsbnException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+
 
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/books")
 public class Controller {
 
     private final BooksService booksService;
 
+
     public Controller(BooksService booksService) {
         this.booksService = booksService;
     }
 
-    // GET all books
     @GetMapping
     public ResponseEntity<List<Book>> getAllBooks() {
         List<Book> books = booksService.getAllBooks();
-        if (books.isEmpty()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.ok(books);
+        return books.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(books);
     }
 
-    // GET a single book by ID
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
-        Book book = booksService.getBookById(id);
-        if (book == null) {
-            return ResponseEntity.status(404).body(null);
-        }
-        return ResponseEntity.ok(book);
+       return ResponseEntity.ok(booksService.getBookById(id));
     }
 
-    // POST create a new book
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody Book book) {
-        Book createdBook = booksService.addBook(book);
-        if (createdBook == null) {
-            return ResponseEntity.status(400).body(null);
-        }
-        return ResponseEntity.status(201).body(createdBook);
+        return ResponseEntity.status(201).body(booksService.addBook(book));
     }
 
-    // PUT update a book
     @PutMapping("/{id}")
     public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody Book book) {
-        Book updatedBook = booksService.updateBook(id, book);
-        if (updatedBook == null) {
-            return ResponseEntity.status(404).body(null);
-        }
-        return ResponseEntity.ok(updatedBook);
+        return ResponseEntity.ok(booksService.updateBook(id, book));
     }
 
-    // DELETE a book by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        boolean deleted = booksService.deleteBook(id);
-        if (!deleted) {
-            return ResponseEntity.status(404).build();
-        }
+        booksService.deleteBook(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<String> handleBookNotFound(BookNotFoundException ex) {
+        return ResponseEntity.status(404).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(400).body(ex.getMessage());
+    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGeneralException(Exception ex) {
+        return ResponseEntity.status(500).body("Internal server error: " + ex.getMessage());
+    }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<String> handleJsonParseError(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(400).body("Invalid JSON format: " + ex.getMessage());
+    }
+    @ExceptionHandler(DuplicateIsbnException.class)
+    public ResponseEntity<String> handleDuplicateIsbn(DuplicateIsbnException ex) {
+        return ResponseEntity.status(409).body(ex.getMessage());
     }
 }
