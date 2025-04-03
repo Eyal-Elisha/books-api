@@ -1,13 +1,15 @@
 package com.example.books;
 
-import org.springframework.stereotype.Service;
+import com.example.books.errorHandler.BookNotFoundException;
+import com.example.books.errorHandler.DuplicateIsbnException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BooksService {
-
     private final BookRepository bookRepository;
 
     @Autowired
@@ -16,21 +18,47 @@ public class BooksService {
     }
 
     public List<Book> getAllBooks() {
-        return null;
+        return bookRepository.findAll();
     }
 
-    public Optional<Book> getBookById(Long id) {
-        return null;
+    public Book getBookById(Long id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
     }
 
+    @Transactional
     public Book addBook(Book book) {
-        return null;
+        if (bookRepository.findByIsbn(book.getIsbn()).isPresent()) {
+            throw new DuplicateIsbnException(book.getIsbn());
+        }
+        return bookRepository.save(book);
     }
 
-    public Optional<Book> updateBook(Long id, Book updatedBook) {
-        return null;
+    @Transactional
+    public Book updateBook(Long id, Book updatedBook) {
+        Book existingBook = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        if (updatedBook.getTitle() != null) existingBook.setTitle(updatedBook.getTitle());
+        if (updatedBook.getAuthor() != null) existingBook.setAuthor(updatedBook.getAuthor());
+        if (updatedBook.getPublishedDate() != null) existingBook.setPublishedDate(updatedBook.getPublishedDate());
+
+        if (updatedBook.getIsbn() != null &&
+                !existingBook.getIsbn().equals(updatedBook.getIsbn()) &&
+                bookRepository.findByIsbn(updatedBook.getIsbn()).isPresent()) {
+            throw new IllegalArgumentException("ISBN already exists: " + updatedBook.getIsbn());
+        }
+        existingBook.setIsbn(updatedBook.getIsbn());
+
+        return bookRepository.save(existingBook);
     }
 
-    public void deleteBook(Long id) {
+    @Transactional
+    public boolean deleteBook(Long id) {
+        if (!bookRepository.existsById(id)) {
+            throw new BookNotFoundException(id);
+        }
+        bookRepository.deleteById(id);
+        return true;
     }
 }
