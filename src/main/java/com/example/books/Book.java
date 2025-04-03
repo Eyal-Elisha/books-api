@@ -8,20 +8,6 @@ import jakarta.persistence.Id;
 
 @Entity
 public class Book {
-
-    public Book(Long id, String title, String author, String isbn, String publishedDate) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.isbn = isbn;
-        this.publishedDate = publishedDate;
-    }
-
-    // Add a default constructor (JPA requires it)
-    public Book() {}
-
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
